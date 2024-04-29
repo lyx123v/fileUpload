@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "rootDir": "./",
+    "outDir": "./dist",
+    "types": ["node"],
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "alwaysStrict": true,
+    "declaration": true,
+    "composite": true,
+    "incremental": true,
+    "strictNullChecks": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "Node10",
+    "lib": ["ES2023", "DOM"],
+    "module": "CommonJS",
+    "noFallthroughCasesInSwitch": true,
+    // 这个普遍反馈会让代码变得啰嗦，暂定遵循原本 bot 的设置，关闭
+    "noImplicitReturns": false,
+    "removeComments": false,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2023"
+  },
+  "ts-node": {
+    "files": true
+  },
+  "include": ["src"]
+}

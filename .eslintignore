@@ -1,0 +1,24 @@
+**/*.d.ts
+
+node_modules
+__dist__
+dist
+build
+output
+output_resource
+es
+lib
+.codebase
+.changeset
+config
+# Rush standard files
+common/scripts
+
+**/__tests__/fixtures
+**/__tests__/outputs
+
+tsconfig.*.json
+tsconfig.json
+
+# FIXME: remove this line
+vitest.config.ts
