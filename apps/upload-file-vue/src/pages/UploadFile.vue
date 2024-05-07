@@ -31,7 +31,11 @@
           <template #default="{ row }">
             <div class="btn">
               <el-button v-if="row.status == 'waiting'" type="primary" size="small"
-                @click="uploadFile(row), dataCache = row">上传</el-button>
+                @click="uploadFile(row)">上传</el-button>
+              <el-button v-if="row.status == 'uploading' || row.status == 'stop'" type="warning" size="small"
+                @click="handlePause(row)">{{
+        row.status == 'uploading' ? '暂停' : row.status == 'stop' ? '继续' : ''
+                }}</el-button>
             </div>
           </template>
         </el-table-column>
@@ -54,15 +58,18 @@ import {
 } from "@project/upload-file/src/setting";
 const fileArray = ref<Array<File> | null>(null); // 文件
 const fileChunksArray = ref<FilePieceArray[]>([]); // 文件切片
-const ws = ref<WebSocket>(); // WebSocket链接
-let dataCache = ref<any>(null);
-let ind = 0;
+const ws = ref<WebSocket[]>([]); // WebSocket链接数组
 const file = ref<HTMLInputElement>(); // 文件上传
 // 加载数据
 const loadData = async () => {
   const data: any = await indexDB.get('fileChunksArray');
   if (data) {
     fileChunksArray.value = data.content.map((item: any) => {
+      connectWebSocket({
+        hash: item.hash,
+        name: item.fileName,
+        index: item.index
+      });
       return {
         ...item,
       };
@@ -98,31 +105,34 @@ async function pretreatmentFile() {
       status: 'resolving', // 上传状态
       fileSize: fileSize(fileData),
       pieces,
+      totalIndex: 0,
+      index: 0
     });
-    // 判断文件状态
     const piecesLen = fileChunksArray.value.length - 1;
+    // piecesLen为当前文件的索引
     calHash({ chunks: pieces }).then(hash => {
       fileChunksArray.value[piecesLen].hash = hash;
-      ws.value!.send(JSON.stringify({
-        type: FIND_FILE,
-        data: {
-          hash,
-          name: fileData.name,
-        }
-      }));
+      fileChunksArray.value[piecesLen].index = piecesLen;
+      // 创建websocket
+      connectWebSocket({
+        hash,
+        name: fileData.name,
+        index: piecesLen
+      });
+      fileChunksArray.value[piecesLen].fileData = null; // 释放内存
     });
   }
 }
 
 // 文件上传
 async function uploadFile(row: FilePieceArray) {
-  if (row.pieces.length == ind + 1) {
+  const piecesLength = row.pieces.length;
+  if (piecesLength == row.totalIndex) {
     // 更新视图
     row.status = 'success';
     row.percentage = 100;
-    Refresh()
     // 通知服务端合并文件
-    ws.value!.send(
+    ws.value[row.index].send(
       JSON.stringify({
         type: MERGE_FILE,
         data: {
@@ -131,31 +141,26 @@ async function uploadFile(row: FilePieceArray) {
         },
       })
     );
+    row.pieces = []; // 释放内存
     return;
   } else {
     row.status = 'uploading';
-    row.percentage = parseFloat(((ind / row.pieces.length) * 100).toFixed(2));
-    row.pieces[ind].isUploaded = true; // 标记已上传
+    row.percentage = parseFloat(((row.totalIndex / piecesLength) * 100).toFixed(2));
+    row.pieces[row.totalIndex].isUploaded = true; // 标记已上传
     // 通知服务端上传文件块索引
-    ws.value!.send(
+    ws.value[row.index].send(
       JSON.stringify({
         type: CHUNK_INDEX,
         data: {
           hash: row.hash,
-          ind
+          ind: row.totalIndex
         },
       })
     );
     // 上传文件块
-    ws.value!.send(row.pieces[ind].chunk);
-    ind++;
+    ws.value[row.index].send(row.pieces[row.totalIndex].chunk);
+    row.totalIndex++;
   }
-}
-
-// 刷新默认行为
-const Refresh = () => {
-  dataCache.value = null;
-  ind = 0;
 }
 
 // 获取文件大小，格式化
@@ -181,56 +186,66 @@ const saveIndexDB = async () => {
 onMounted(async () => {
   // 加载indexDB数据
   await loadData();
-  // 连接websocket
-  var time = setInterval(() => {
-    connectWebSocket();
-    // 连接成功后清除定时器
-    if (WebSocketIsOpne.value) {
-      clearInterval(time);
-    }
-  }, 1000);
 })
 
-// websocket是否打开
-const WebSocketIsOpne = ref(false);
-// 连接websocket
-const connectWebSocket = () => {
-  if (WebSocketIsOpne.value) return;
-  ws.value = new WebSocket('ws://localhost:3000/websocket/001');
-  ws.value.onmessage = (e) => {
-    const data = JSON.parse(e.data).data;
-    if (data.type === FIND_FILE) {
-      // 判断文件是否已经上传
-      const piecesLen = fileChunksArray.value.length - 1;
-      if (data.exists) {
-        fileChunksArray.value[piecesLen].status = 'success';
-        fileChunksArray.value[piecesLen].percentage = 100;
-      } else {
-        fileChunksArray.value[piecesLen].status = 'waiting';
+// 暂停或继续上传
+async function handlePause(row: FilePieceArray) {
+  row.status = row.status === 'uploading' ? 'stop' : 'uploading'; // 暂停/继续变更状态
+  if (row.status === 'uploading') {
+    // 继续上传chuang
+    await connectWebSocket({
+      hash: row.hash,
+      name: row.fileName,
+      index: row.index
+    }, true);
+    uploadFile(row);
+  } else if (row.status === 'stop') {
+    // 暂停
+    ws.value[row.index].close();
+  }
+  saveIndexDB();
+}
+
+// 增加websocket
+const connectWebSocket = async ({
+  hash,
+  name,
+  index
+}, isAgain = false) => {
+  await new Promise<void>((resolve, reject) => {
+    const wsApi = new WebSocket(`ws://localhost:3000/websocket/${hash}_${name}`)
+    wsApi.onmessage = (e) => {
+      const data = JSON.parse(e.data).data;
+      if (data.type === FIND_FILE) {
+        // 查找文件
+        if (data.exists) {
+          fileChunksArray.value[index].status = 'success';
+          fileChunksArray.value[index].percentage = 100;
+        } else {
+          fileChunksArray.value[index].status = isAgain ? 'resolving' : 'waiting';
+        }
+      } else if (data.type === MERGE_FILE) {
+        // 合并文件成功
+        const row: FilePieceArray = fileChunksArray.value.find(item => item.hash === data.hash)!;
+        uploadFile(row)
       }
-    } else if (data.type === DELETE) {
-      // 删除文件
-      const index = fileChunksArray.value.findIndex((item) => item.hash === data.hash);
-      fileChunksArray.value.splice(index, 1);
-    } else if (data.type === MERGE_FILE) {
-      if (dataCache.value.pieces.length != ind) {
-        uploadFile(dataCache.value);
-      }
-    }
-    saveIndexDB();
-  };
-  ws.value.onopen = () => {
-    console.log('webSorcket连接成功');
-    WebSocketIsOpne.value = true;
-  };
-  ws.value.onclose = () => {
-    console.log('webSorcket连接关闭');
-    WebSocketIsOpne.value = false;
-  };
-  ws.value.onerror = () => {
-    console.log('webSorcket连接失败');
-    WebSocketIsOpne.value = false;
-  };
+      saveIndexDB();
+    };
+    wsApi.onopen = () => {
+      console.log('webSorcket连接成功');
+      resolve();
+    };
+    wsApi.onclose = () => {
+      console.log('webSorcket连接关闭');
+      reject()
+    };
+    wsApi.onerror = () => {
+      console.log('webSorcket连接失败');
+      reject()
+    };
+    // 保存ws
+    ws.value[index] = wsApi;
+  })
 };
 
 </script>

@@ -7,6 +7,8 @@ export interface FilePieceArray {
   fileData: File | null;
   hash: string; // 文件hash值
   fileSize?: string | number; // 文件大小
+  index: number; // ws处理索引
+  totalIndex: number; // 已上传切片索引
   // 上传状态
   status:
     | "resolving" // 解析中

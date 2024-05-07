@@ -16,10 +16,10 @@
     "noImplicitReturns": false,
     "removeComments": false,
     "sourceMap": true,
-    "target": "ES2023",
+    "target": "ES2018",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": ["ES2023", "DOM", "DOM.Iterable", "WebWorker", "ScriptHost"],
+    "lib": ["ES2018", "DOM", "DOM.Iterable", "WebWorker", "ScriptHost"],
     "skipLibCheck": true,
 
     /* Bundler mode */

@@ -18,19 +18,32 @@ import { findChunkController, findFileController } from "./find";
 import { deleteFileController, mergeChunksController } from "./merge";
 import KoaWebsocket from "koa-websocket";
 
-// 缓存文件切片信息
-let cache: any = {};
-
 export const defineWebSocketRoutes = (
   app: KoaWebsocket.App,
   fileStorageRoot: string
 ) => {
+  // 缓存文件切片信息
+  let cache: any = {};
   const router = new Router();
   router.all("/websocket/:id", async (ctx) => {
     // 通过ctx.params.id获取到前端传过来的id
-    const ID = ctx.params.id;
+    const hashORname = ctx.params.id;
+    const HASH = hashORname.split("_")[0];
+    const NAME = hashORname.split("_")[1];
+    console.log(`文件名：${NAME}，HASH：${HASH}，建立了链接`);
+    // 立刻查询文件是否已上传
+    findFileController(
+      {
+        hash: HASH,
+        name: NAME,
+        index: undefined,
+      },
+      fileStorageRoot
+    ).then((res) => {
+      ctx.websocket.send(JSON.stringify(res));
+    });
     ctx.websocket.on("message", (msg: string | Blob) => {
-      console.log(`前端${ID}发来数据`);
+      console.log(`HASH: ${HASH}`);
       let data: any = null;
       let flg = "";
       let sendData: any = null;
@@ -52,7 +65,7 @@ export const defineWebSocketRoutes = (
             ctx.websocket.send(JSON.stringify(res));
           });
         } else if (data.type === CHUNK_INDEX) {
-          console.log(`记录分片index${sendData.ind}`);
+          console.log(`记录分片index-${sendData.ind}`);
           cache = sendData;
         } else if (data.type === MERGE_FILE) {
           console.log("合并文件");
@@ -75,7 +88,10 @@ export const defineWebSocketRoutes = (
       }
     });
     ctx.websocket.on("close", () => {
-      console.log(`前端${ID}关闭了websocket`);
+      console.log(`前端${HASH}关闭了websocket`);
+    });
+    ctx.websocket.on("error", (err) => {
+      console.log(`前端${HASH}发生了错误${err}`);
     });
   });
 

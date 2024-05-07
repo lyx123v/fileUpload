@@ -1,13 +1,13 @@
 // 导入脚本
-import SparkMD5 from 'spark-md5';
-import { type FilePiece } from './file';
+import SparkMD5 from "spark-md5";
+import { type FilePiece } from "./file";
 
 // 读取文件分块的内容
-const readChunk = file => {
+const readChunk = (file) => {
   return new Promise((resolve) => {
     const reader = new FileReader(); // 创建一个FileReader对象
     reader.readAsArrayBuffer(file); // 将文件以ArrayBuffer形式读取
-    reader.onload = e => {
+    reader.onload = (e) => {
       if (e.target) {
         // 文件读取完成后的处理
         resolve(e.target.result); // 解析为读取到的ArrayBuffer
@@ -22,7 +22,7 @@ const readChunk = file => {
  * 使用SparkMD5库对所有分块进行累加计算，然后返回最终的hash值。
  */
 // self是当前Worker的引用，用于接收和发送消息。
-self.onmessage = async e => {
+self.onmessage = async (e) => {
   const { fileChunkList } = e.data as { fileChunkList: FilePiece[] };
   const spark = new SparkMD5.ArrayBuffer(); // 初始化SparkMD5用于计算hash
 
