@@ -1,7 +1,6 @@
 import path from "path";
 import { type FileBasicStorage, fsStorage } from "./fileBasicStorage";
-import { isPositiveInter, isValidString } from "../../common";
-
+import { isPositiveInter, isValidString } from "@packages/common_utils";
 /**
  * 业务逻辑：文件切片服务
  */

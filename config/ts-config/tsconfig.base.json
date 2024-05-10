@@ -14,7 +14,7 @@
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "Node10",
-    "lib": ["ES2015"],
+    "lib": ["ES2018"],
     "module": "CommonJS",
     "noFallthroughCasesInSwitch": true,
     // 这个普遍反馈会让代码变得啰嗦，暂定遵循原本 bot 的设置，关闭

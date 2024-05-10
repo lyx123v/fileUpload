@@ -15,7 +15,7 @@ import { saveChunkController } from "./save-file";
 // 查询文件执行方法
 import { findChunkController, findFileController } from "./find";
 // 合并文件执行方法
-import { deleteFileController, mergeChunksController } from "./merge";
+import { mergeChunksController } from "./merge";
 import KoaWebsocket from "koa-websocket";
 
 export const defineWebSocketRoutes = (
@@ -24,7 +24,7 @@ export const defineWebSocketRoutes = (
 ) => {
   // 缓存文件切片信息
   let cache: any = {};
-  const router = new Router();
+  const router = new Router() as any;
   router.all("/websocket/:id", async (ctx) => {
     // 通过ctx.params.id获取到前端传过来的id
     const hashORname = ctx.params.id;
@@ -48,14 +48,18 @@ export const defineWebSocketRoutes = (
       let flg = "";
       let sendData: any = null;
 
-      try {
-        data = JSON.parse(msg);
-        flg = "string";
-        sendData = data.data;
-      } catch (error) {
+      const determine = (val: string | Blob): string =>
+        Object.prototype.toString.call(val).slice(8, -1);
+
+      const determineFlg = determine(msg);
+      if (determineFlg === "Blob") {
         data = msg;
         flg = "blob";
         sendData = data;
+      } else if (determineFlg === "String") {
+        data = JSON.parse(`${msg}`);
+        flg = "string";
+        sendData = data.data;
       }
       if (flg === "string") {
         // 字符串信息

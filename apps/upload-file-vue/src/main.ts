@@ -5,7 +5,7 @@ import { createPinia } from "pinia";
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
 import router from "./router";
-import { indexDB } from "@packages/utils/src/frontend";
+import { indexDB } from "@packages/frontend_utils";
 
 await indexDB.init(); // 初始化indexDB
 

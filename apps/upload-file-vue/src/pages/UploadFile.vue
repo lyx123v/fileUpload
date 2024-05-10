@@ -47,7 +47,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { calHash } from '../utils/hash';
-import { indexDB } from '@packages/utils/src/frontend';
+import { indexDB } from "@packages/frontend_utils";
 import { type FilePieceArray, splitFile } from '../utils/file';
 import prettysize from 'prettysize';
 import {

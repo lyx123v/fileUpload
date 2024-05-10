@@ -1,7 +1,7 @@
 // find file or piece of file
 
 import { type Context } from "koa";
-import { FilePieceService } from "@packages/utils/src/backend";
+import { FilePieceService } from "@packages/backend_utils";
 
 /**
  * 执行合并碎片的操作

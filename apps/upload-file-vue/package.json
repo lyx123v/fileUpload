@@ -11,7 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "@project/upload-file": "workspace:*",
-    "@packages/utils": "workspace:*",
+    "@packages/common_utils": "workspace:*",
+    "@packages/frontend_utils": "workspace:*",
     "axios": "^1.6.2",
     "element-plus": "^2.4.2",
     "pinia": "^2.1.7",

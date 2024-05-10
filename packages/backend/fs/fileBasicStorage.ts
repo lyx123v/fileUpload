@@ -11,7 +11,7 @@ import {
 } from "fs/promises";
 
 import { PathLike, RmDirOptions, StatOptions } from "fs";
-import { isValidString } from "../../common";
+import { isValidString } from "@packages/common_utils";
 
 export class FileBasicStorage {
   // 判断文件是否存在，存在返回(异步) true，否则返回(异步)  false

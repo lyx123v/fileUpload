@@ -3,6 +3,7 @@
     "rootDir": "./src",
     "outDir": "dist",
     "sourceMap": false,
+    "downlevelIteration": true,
     "esModuleInterop": true
   },
   "include": ["src"]

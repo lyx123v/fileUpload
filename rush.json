@@ -411,8 +411,16 @@
       "projectFolder": "apps/upload-file-vue"
     },
     {
-      "packageName": "@packages/utils",
-      "projectFolder": "packages/utils"
+      "packageName": "@packages/backend_utils",
+      "projectFolder": "packages/backend"
+    },
+    {
+      "packageName": "@packages/common_utils",
+      "projectFolder": "packages/common"
+    },
+    {
+      "packageName": "@packages/frontend_utils",
+      "projectFolder": "packages/frontend"
     },
     {
       "packageName": "@config/eslint-config",

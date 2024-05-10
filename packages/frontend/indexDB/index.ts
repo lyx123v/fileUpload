@@ -23,6 +23,7 @@ let db: any;
 // 初始化数据库
 export const init = () => {
   return new Promise((resolve, reject) => {
+    //  as IDBOpenDBRequest
     request = window.indexedDB.open(SQL_NAME);
     request.onerror = (event: any) => {
       reject(event);
