@@ -4,7 +4,8 @@
   "description": "大文件上传服务端",
   "main": "src/index.js",
   "scripts": {
-    "dev": "node -r sucrase/register src/index.ts"
+    "dev": "node -r sucrase/register src/index.ts",
+    "build": "tsc -b tsconfig.build.json"
   },
   "author": "",
   "license": "ISC",
@@ -21,6 +22,8 @@
     "supertest": "^6.3.4"
   },
   "devDependencies": {
+    "@config/eslint-config": "workspace:*",
+    "@config/ts-config": "workspace:*",
     "@types/koa": "^2.14.0",
     "@types/koa-bodyparser": "^4.3.12",
     "@types/koa-pino-logger": "^3.0.4",

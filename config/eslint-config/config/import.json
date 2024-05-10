@@ -1,0 +1,67 @@
+{
+  "plugins": ["import"],
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "moduleDirectory": ["node_modules", "src"],
+        "extensions": [".js", ".jsx", ".ts", ".tsx"]
+      }
+    }
+  },
+  "rules": {
+    "import/no-cycle": "error",
+    "import/prefer-default-export": "off",
+    "import/no-extraneous-dependencies": [
+      "error",
+      {
+        "devDependencies": true
+      }
+    ],
+    "import/no-relative-packages": "error",
+    "import/extensions": "off",
+    "import/order": [
+      "warn",
+      {
+        "groups": [
+          "builtin",
+          "external",
+          ["internal", "parent", "sibling", "index"],
+          "unknown"
+        ],
+        "pathGroups": [
+          {
+            "pattern": "react*",
+            "group": "builtin",
+            "position": "before"
+          },
+          {
+            "pattern": "@/**",
+            "group": "internal",
+            "position": "before"
+          },
+          {
+            "pattern": "./*.+(css|sass|less|scss|pcss|styl)",
+            "patternOptions": { "dot": true, "nocomment": true },
+            "group": "unknown",
+            "position": "after"
+          }
+        ],
+        "alphabetize": {
+          "order": "desc" /* sort in ascending order. Options: ['ignore', 'asc', 'desc'] */,
+          "caseInsensitive": true /* ignore case. Options: [true, false] */
+        },
+        "pathGroupsExcludedImportTypes": ["builtin"],
+        "newlines-between": "always"
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"],
+      "extends": ["plugin:import/typescript"],
+      "rules": {
+        "import/no-unresolved": "error"
+      }
+    }
+  ]
+}

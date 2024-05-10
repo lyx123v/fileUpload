@@ -197,8 +197,9 @@ async function handlePause(row: FilePieceArray) {
       hash: row.hash,
       name: row.fileName,
       index: row.index
-    }, true);
-    uploadFile(row);
+    }, true).then(() => {
+      uploadFile(row);
+    });
   } else if (row.status === 'stop') {
     // 暂停
     ws.value[row.index].close();

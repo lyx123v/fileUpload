@@ -33,6 +33,7 @@ export const init = () => {
       db = event.target.result;
       console.log("初始化成功");
     };
+    // 更新数据库
     request.onupgradeneeded = (event: any) => {
       db = event.target.result;
       let objectStore;
@@ -42,6 +43,7 @@ export const init = () => {
           keyPath: "name",
           unique: true, // 使用name名称作为主键，且不允许重复
         });
+        // 创建索引              索引名称    索引字段         配置
         objectStore.createIndex("content", "content", { unique: false }); // 建立索引
       }
     };

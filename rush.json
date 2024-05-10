@@ -413,6 +413,14 @@
     {
       "packageName": "@packages/utils",
       "projectFolder": "packages/utils"
+    },
+    {
+      "packageName": "@config/eslint-config",
+      "projectFolder": "config/eslint-config"
+    },
+    {
+      "packageName": "@config/ts-config",
+      "projectFolder": "config/ts-config"
     }
   ]
 }

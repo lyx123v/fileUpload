@@ -4,6 +4,7 @@
   "description": "大文件上传客户端",
   "main": "index.js",
   "scripts": {
+    "build": "vite build",
     "dev": "vite"
   },
   "author": "",
@@ -20,6 +21,8 @@
     "vue-router": "^4.2.5"
   },
   "devDependencies": {
+    "@config/eslint-config": "workspace:*",
+    "@config/ts-config": "workspace:*",
     "vite-plugin-commonjs-externals": "^0.1.4",
     "@vitejs/plugin-vue": "^5.0.3",
     "eslint": "^8.54.0",
