@@ -1,3 +1,5 @@
+<!-- 看完最大的感受是，一味追求实现高阶功能，反而把诸多基础能力都丢了 -->
+<!-- 这个文件实在太乱了，建议重写 -->
 <template>
   <div class="upload-container">
     <div class="wrap">
@@ -55,6 +57,7 @@ import {
   FIND_FILE,
   CHUNK_INDEX,
   MERGE_FILE
+  // 千万不要直接导入另一个包的 src，这是一个非常不好的实践
 } from "@project/upload-file/src/setting";
 const fileArray = ref<Array<File> | null>(null); // 文件
 const fileChunksArray = ref<FilePieceArray[]>([]); // 文件切片
@@ -65,6 +68,8 @@ const loadData = async () => {
   const data: any = await indexDB.get('fileChunksArray');
   if (data) {
     fileChunksArray.value = data.content.map((item: any) => {
+      // 从调用规则看，这里会创建很多个 ws 连接实例，这反而会有严重性能问题吧？网络连接本身就是比较耗时的操作啊
+      // 理论上应该建立一个，之后无限复用即可
       connectWebSocket({
         hash: item.hash,
         name: item.fileName,
@@ -87,6 +92,7 @@ function handleFileChange(e: any) {
 }
 
 // 预处理文件
+// 这些跟组件不强耦合的逻辑都应该拆出去
 async function pretreatmentFile() {
   // 文件为空直接弹出
   if (!fileArray.value) return;
@@ -125,6 +131,7 @@ async function pretreatmentFile() {
 }
 
 // 文件上传
+// 参数名 row 是什么意思？跟文件有什么关系？
 async function uploadFile(row: FilePieceArray) {
   const piecesLength = row.pieces.length;
   if (piecesLength == row.totalIndex) {
@@ -132,6 +139,8 @@ async function uploadFile(row: FilePieceArray) {
     row.status = 'success';
     row.percentage = 100;
     // 通知服务端合并文件
+    // 看的好迷糊啊，ws 是个全局对象吗？上面的 connectWebSocket 的作用是啥？
+    // 真的有必要为每一个分片都创建 ws 对象吗？
     ws.value[row.index].send(
       JSON.stringify({
         type: MERGE_FILE,
@@ -214,12 +223,16 @@ const connectWebSocket = async ({
   index
 }, isAgain = false) => {
   await new Promise<void>((resolve, reject) => {
+    // 这个 host name 是认真的吗
     const wsApi = new WebSocket(`ws://localhost:3000/websocket/${hash}_${name}`)
+    // 如果要用 ws，不要耦合到组件里，抽出去作为独立utils，独立文件管理
     wsApi.onmessage = (e) => {
       const data = JSON.parse(e.data).data;
       if (data.type === FIND_FILE) {
         // 查找文件
         if (data.exists) {
+          // 这又是一个特别特别不好的实践，在函数里面更改了外部对象(fileChunksArray)的状态，这会导致内外耦合度过高
+          // 要合理使用闭包！
           fileChunksArray.value[index].status = 'success';
           fileChunksArray.value[index].percentage = 100;
         } else {

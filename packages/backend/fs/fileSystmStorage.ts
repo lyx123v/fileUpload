@@ -65,6 +65,8 @@ export class FilePieceService {
    * @param chunkIndex 可选参数，指定要检查的片段索引
    * @returns 指定片段或合并后文件是否存在
    */
+  // 我感觉，代码跟训练营提供的样例项目就一模一样。。。。
+  // 建议自己做一遍吧，别抄代码
   async isExist(chunkIndex?: number, filename?: string) {
     const findByChunk = typeof chunkIndex === "number" && chunkIndex >= 0;
     let name = "";
@@ -82,6 +84,7 @@ export class FilePieceService {
    * @returns 返回文件数组
    */
   async ls() {
+    // 连 fn2idx 这种箭头函数的名字都一模一样
     const fn2idx = (filename: string) => path.basename(filename);
     // 获取哈希值对应的目录下的所有文件
     const pieces = await this._storage.ls(this.hashDir);

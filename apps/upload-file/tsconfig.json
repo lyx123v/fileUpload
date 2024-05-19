@@ -4,6 +4,7 @@
   "compilerOptions": {
     "rootDir": "./",
     "outDir": "./dist",
+    // 你都没写单测，没必要加 "vitest/globals"
     "types": ["vitest/globals", "node"]
   },
   "include": ["src"]

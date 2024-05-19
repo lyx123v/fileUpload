@@ -4,6 +4,7 @@
 //   constructor(DB_NAME: string) {
 //     this.DB_NAME = DB_NAME;
 //   }
+// 这些 copy 文件是什么鬼
 
 //   // openDB
 //   public openStore = (
