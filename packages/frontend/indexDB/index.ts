@@ -1,6 +1,7 @@
 const SQL_NAME = "SQL_NAME";
 const DB_NAME = "DB_NAME";
 
+// Result 这个命名太随意了，没有指向性
 interface Result {
   name: string;
   content: string;
@@ -20,6 +21,10 @@ interface Put {
 let request: any;
 let db: any;
 
+// 其实这个文件适合做成单例 class，因为它是有状态的
+// 你当前的设计要求外部按规则，先调用 init，之后才能调用其他数据操作接口
+// 假如做成单例 class，就可以在 construct 里面自行做好数据初始化操作
+// 外部只需直接操作数据即可
 // 初始化数据库
 export const init = () => {
   return new Promise((resolve, reject) => {
@@ -54,6 +59,8 @@ export const init = () => {
 // get操作，读取数据
 export const get = (name: string): Promise<Result> => {
   return new Promise<Result>((resolve, reject) => {
+    // 我感觉，这个类型规则，Get 和 Put 好像都没啥必要，外部并没有地方用到里面的 onsuccess 和 onerror 方法吧？
+    // 感觉有点过度设计了
     const select: Get = db
       .transaction([DB_NAME], "readonly")
       .objectStore(DB_NAME)
