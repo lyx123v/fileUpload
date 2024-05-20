@@ -1,4 +1,4 @@
-import { type DefaultContext, type Context, type Middleware } from 'koa';
+import { type DefaultContext, type Middleware } from "koa";
 
 /**
  * 创建一个错误捕获的中间件。
@@ -16,7 +16,7 @@ export const errorCatch = (): Middleware => {
       // 设置响应体
       ctx.body = {
         code: 500,
-        message: '服务器内部错误',
+        message: "服务器内部错误",
       };
     }
   };

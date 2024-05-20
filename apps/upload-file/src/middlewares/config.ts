@@ -1,4 +1,4 @@
-import { type DefaultContext, type Context, type Middleware } from 'koa';
+import { type DefaultContext, type Middleware } from "koa";
 
 export const configProvider = (fileStorageRoot: string): Middleware => {
   return async (ctx: DefaultContext, next: () => Promise<void>) => {

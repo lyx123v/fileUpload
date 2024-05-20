@@ -1,19 +1,10 @@
-import { koaBody } from "koa-body"; // 解析提交中间件
-import Koa from "koa";
 import Router from "@koa/router";
 
-import {
-  FIND_FILE,
-  CHUNK,
-  MERGE_FILE,
-  DELETE,
-  FIND_CHUNK,
-  CHUNK_INDEX,
-} from "../setting";
+import { FIND_FILE, MERGE_FILE, CHUNK_INDEX } from "../setting";
 // 上传切片执行方法
 import { saveChunkController } from "./save-file";
 // 查询文件执行方法
-import { findChunkController, findFileController } from "./find";
+import { findFileController } from "./find";
 // 合并文件执行方法
 import { mergeChunksController } from "./merge";
 import KoaWebsocket from "koa-websocket";
@@ -23,7 +14,7 @@ export const defineWebSocketRoutes = (
   fileStorageRoot: string
 ) => {
   // 缓存文件切片信息
-  let cache: any = {};
+  let cache = new Map();
   const router = new Router() as any;
   router.all("/websocket/:id", async (ctx) => {
     // 通过ctx.params.id获取到前端传过来的id
@@ -42,24 +33,20 @@ export const defineWebSocketRoutes = (
     ).then((res) => {
       ctx.websocket.send(JSON.stringify(res));
     });
-    ctx.websocket.on("message", (msg: string | Blob) => {
+    ctx.websocket.on("message", async (msg: string | Blob) => {
       console.log(`HASH: ${HASH}`);
       let data: any = null;
       let flg = "";
       let sendData: any = null;
 
-      const determine = (val: string | Blob): string =>
-        Object.prototype.toString.call(val).slice(8, -1);
-
-      const determineFlg = determine(msg);
-      if (determineFlg === "Blob") {
-        data = msg;
-        flg = "blob";
-        sendData = data;
-      } else if (determineFlg === "String") {
+      try {
         data = JSON.parse(`${msg}`);
         flg = "string";
         sendData = data.data;
+      } catch (error) {
+        data = msg;
+        flg = "blob";
+        sendData = data;
       }
       if (flg === "string") {
         // 字符串信息
@@ -70,28 +57,31 @@ export const defineWebSocketRoutes = (
           });
         } else if (data.type === CHUNK_INDEX) {
           console.log(`记录分片index-${sendData.ind}`);
-          cache = sendData;
+          cache.set(HASH, sendData);
         } else if (data.type === MERGE_FILE) {
           console.log("合并文件");
           mergeChunksController(sendData, fileStorageRoot);
+          cache.delete(HASH);
         } else {
           console.error("未知的消息类型");
         }
       } else if (flg === "blob") {
         console.log("分片上传");
-        saveChunkController(
+
+        const cacheData = cache.get(HASH);
+        const res = await saveChunkController(
           {
-            index: cache.ind,
-            hash: cache.hash,
+            index: cacheData.ind,
+            hash: cacheData.hash,
             chunk: sendData,
           },
           fileStorageRoot
-        ).then((res) => {
-          ctx.websocket.send(JSON.stringify(res));
-        });
+        );
+        ctx.websocket.send(JSON.stringify(res));
       }
     });
     ctx.websocket.on("close", () => {
+      cache.delete(HASH);
       console.log(`前端${HASH}关闭了websocket`);
     });
     ctx.websocket.on("error", (err) => {

@@ -1,0 +1,5 @@
+#! /usr/bin/env node
+
+require("sucrase/register/ts");
+const { main } = require("../src/index");
+main();

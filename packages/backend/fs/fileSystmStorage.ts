@@ -1,6 +1,8 @@
 import path from "path";
+import fs from "fs/promises";
 import { type FileBasicStorage, fsStorage } from "./fileBasicStorage";
 import { isPositiveInter, isValidString } from "@packages/common_utils";
+import { PackageSnapshot } from "@pnpm/lockfile-file";
 /**
  * 业务逻辑：文件切片服务
  */
@@ -135,3 +137,23 @@ export class FilePieceService {
     return true;
   }
 }
+
+/**
+ * 业务逻辑：读取package.json文件
+ */
+export const readPackageJson = async (
+  pathStr: string,
+  field: string[]
+): Promise<any> => {
+  const pkg = await fs.readFile(
+    path.resolve(pathStr, "../package.json"),
+    "utf-8"
+  );
+  let pkgObj = JSON.parse(pkg);
+  for (let i = 0; i < field.length; i++) {
+    const element = field[i];
+    pkgObj = pkgObj[element] || "";
+  }
+  return pkgObj;
+};
+

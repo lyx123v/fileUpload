@@ -403,32 +403,49 @@
     //   "tags": [ "tools" ]
     // }
     {
+      // 大文件上传-服务端
       "packageName": "@project/upload-file",
       "projectFolder": "apps/upload-file"
     },
     {
+      // 大文件上传-客户端
       "packageName": "@project/upload-file-vue",
       "projectFolder": "apps/upload-file-vue"
     },
     {
+      // 公共方法-服务端
       "packageName": "@packages/backend_utils",
       "projectFolder": "packages/backend"
     },
     {
+      // 公共方法-服务端/客户端通用
       "packageName": "@packages/common_utils",
       "projectFolder": "packages/common"
     },
     {
+      // 公共方法-客户端
       "packageName": "@packages/frontend_utils",
       "projectFolder": "packages/frontend"
     },
     {
+      // eslint-默认配置
       "packageName": "@config/eslint-config",
       "projectFolder": "config/eslint-config"
     },
     {
+      // ts-默认配置
       "packageName": "@config/ts-config",
       "projectFolder": "config/ts-config"
+    },
+    {
+      // 依赖分析-服务端
+      "packageName": "@project/dependency-analysis",
+      "projectFolder": "apps/dependencyAnalysis"
+    },
+    {
+      // 依赖分析-客户端
+      "packageName": "@project/dependency-analysis-vue",
+      "projectFolder": "apps/dependencyAnalysis-vue"
     }
   ]
 }

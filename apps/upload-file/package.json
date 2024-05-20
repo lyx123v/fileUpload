@@ -2,13 +2,29 @@
   "name": "@project/upload-file",
   "version": "1.0.0",
   "description": "大文件上传服务端",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "scripts": {
     "dev": "node -r sucrase/register src/index.ts",
     "build": "tsc -b tsconfig.build.json"
   },
   "author": "",
   "license": "ISC",
+  "maintainers": [],
+  "sideEffects": false,
+  "exports": {
+    "./setting": "./src/setting/index.ts",
+    "./types": "./src/types.ts"
+  },
+  "typesVersions": {
+    "*": {
+      "setting": [
+        "./src/setting/index.ts"
+      ],
+      "types": [
+        "./src/types.ts"
+      ]
+    }
+  },
   "dependencies": {
     "@packages/backend_utils": "workspace:*",
     "@packages/common_utils": "workspace:*",

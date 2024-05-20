@@ -1,6 +1,5 @@
 // find file or piece of file
 
-import { type Context } from "koa";
 import { FilePieceService } from "@packages/backend_utils";
 
 /**

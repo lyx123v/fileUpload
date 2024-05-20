@@ -4,7 +4,6 @@ import KoaWebsocket from "koa-websocket";
 
 // middlewares为中间件文件夹
 import { errorCatch } from "./middlewares/error-catch"; // 捕获报错
-import { configProvider } from "./middlewares/config"; // 提供文件存储位置
 import { defineWebSocketRoutes } from "./controllers"; // 定义路由
 
 export const run = (context: {

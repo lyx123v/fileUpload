@@ -4,6 +4,7 @@
       <input type="file" hidden ref="file" @change="handleFileChange" multiple class="ipt" />
       <el-button type="primary" size="small" @click="() => file.click()">上传文件
       </el-button>
+      <el-button type="primary" size="small" :disabled="isDisabled" @click="fileAll">一键上传</el-button>
       <el-table :data="fileChunksArray" empty-text="无文件">
         <el-table-column prop="fileName" label="文件名"></el-table-column>
         <el-table-column label="文件大小">
@@ -34,7 +35,7 @@
                 @click="uploadFile(row)">上传</el-button>
               <el-button v-if="row.status == 'uploading' || row.status == 'stop'" type="warning" size="small"
                 @click="handlePause(row)">{{
-        row.status == 'uploading' ? '暂停' : row.status == 'stop' ? '继续' : ''
+                  row.status == 'uploading' ? '暂停' : row.status == 'stop' ? '继续' : ''
                 }}</el-button>
             </div>
           </template>
@@ -45,31 +46,36 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { calHash } from '../utils/hash';
-import { indexDB } from "@packages/frontend_utils";
+import { newIndexDB } from "@packages/frontend_utils";
 import { type FilePieceArray, splitFile } from '../utils/file';
 import prettysize from 'prettysize';
 import {
-  DELETE,
   FIND_FILE,
-  CHUNK_INDEX,
   MERGE_FILE
-} from "@project/upload-file/src/setting";
+} from "@project/upload-file/setting";
+import { chunkIndex, mergeFile, uploadFileChuck } from '../api/sorcket';
 const fileArray = ref<Array<File> | null>(null); // 文件
 const fileChunksArray = ref<FilePieceArray[]>([]); // 文件切片
 const ws = ref<WebSocket[]>([]); // WebSocket链接数组
 const file = ref<HTMLInputElement>(); // 文件上传
 // 加载数据
 const loadData = async () => {
-  const data: any = await indexDB.get('fileChunksArray');
+  const data: any = await newIndexDB.query_code('fileChunksArray');
   if (data) {
-    fileChunksArray.value = data.content.map((item: any) => {
-      connectWebSocket({
-        hash: item.hash,
-        name: item.fileName,
-        index: item.index
-      });
+    fileChunksArray.value = data.data.map((item: FilePieceArray) => {
+
+      if (item.status !== 'success' && item.percentage !== 100) {
+        connectWebSocket({
+          hash: item.hash,
+          name: item.fileName,
+          index: item.index,
+        });
+      } else {
+        item.status = 'success';
+        item.percentage = 100;
+      }
       return {
         ...item,
       };
@@ -83,6 +89,7 @@ function handleFileChange(e: any) {
   pretreatmentFile(); // 预处理文件
   setTimeout(() => {
     fileArray.value = null;
+    saveIndexDB();
   }, 0);
 }
 
@@ -132,15 +139,7 @@ async function uploadFile(row: FilePieceArray) {
     row.status = 'success';
     row.percentage = 100;
     // 通知服务端合并文件
-    ws.value[row.index].send(
-      JSON.stringify({
-        type: MERGE_FILE,
-        data: {
-          hash: row.hash,
-          name: row.fileName,
-        },
-      })
-    );
+    mergeFile(ws.value[row.index], row);
     row.pieces = []; // 释放内存
     return;
   } else {
@@ -148,39 +147,35 @@ async function uploadFile(row: FilePieceArray) {
     row.percentage = parseFloat(((row.totalIndex / piecesLength) * 100).toFixed(2));
     row.pieces[row.totalIndex].isUploaded = true; // 标记已上传
     // 通知服务端上传文件块索引
-    ws.value[row.index].send(
-      JSON.stringify({
-        type: CHUNK_INDEX,
-        data: {
-          hash: row.hash,
-          ind: row.totalIndex
-        },
-      })
-    );
+    chunkIndex(ws.value[row.index], row)
     // 上传文件块
-    ws.value[row.index].send(row.pieces[row.totalIndex].chunk);
+    uploadFileChuck(ws.value[row.index], row)
     row.totalIndex++;
   }
 }
 
+// 一键上传
+async function fileAll() {
+  for (let i = 0; i < fileChunksArray.value.length; i++) {
+    const row = fileChunksArray.value[i];
+    if (row.status === 'stop') {
+      // 暂停状态
+      handlePause(row);
+    } else if (row.status === 'waiting' || row.status === 'error' || row.status === 'resolving') {
+      uploadFile(row)
+    }
+  }
+}
+
+// 使用计算属性禁用一键上传
+const isDisabled = computed(() => {
+  return fileChunksArray.value.every(item => item.status === 'success' || item.status === 'uploading' || item.status === 'resolving');
+});
+
+
 // 获取文件大小，格式化
 const fileSize = (file: File): string => {
   return prettysize(file.size);
-};
-
-// 保存到IndexDB
-const saveIndexDB = async () => {
-  indexDB.add('fileChunksArray', fileChunksArray.value.map(item => {
-    return {
-      ...item,
-      pieces: item.pieces.map((e: any) => {
-        return {
-          chunk: e.chunk,
-          isUploaded: e.isUploaded,
-        }
-      })
-    };
-  }));
 };
 
 onMounted(async () => {
@@ -204,8 +199,26 @@ async function handlePause(row: FilePieceArray) {
     // 暂停
     ws.value[row.index].close();
   }
-  saveIndexDB();
 }
+
+// websocket回复消息
+const websocketController = (res, index: number, isAgain: boolean) => {
+  const data = JSON.parse(res.data).data;
+  if (data.type === FIND_FILE) {
+    // 查找文件
+    if (data.exists) {
+      fileChunksArray.value[index].status = 'success';
+      fileChunksArray.value[index].percentage = 100;
+    } else {
+      fileChunksArray.value[index].status = isAgain ? 'resolving' : 'waiting';
+    }
+  } else if (data.type === MERGE_FILE) {
+    // 合并文件成功
+    const row: FilePieceArray = fileChunksArray.value.find(item => item.hash === data.hash)!;
+    uploadFile(row)
+  }
+}
+
 
 // 增加websocket
 const connectWebSocket = async ({
@@ -216,21 +229,11 @@ const connectWebSocket = async ({
   await new Promise<void>((resolve, reject) => {
     const wsApi = new WebSocket(`ws://localhost:3000/websocket/${hash}_${name}`)
     wsApi.onmessage = (e) => {
-      const data = JSON.parse(e.data).data;
-      if (data.type === FIND_FILE) {
-        // 查找文件
-        if (data.exists) {
-          fileChunksArray.value[index].status = 'success';
-          fileChunksArray.value[index].percentage = 100;
-        } else {
-          fileChunksArray.value[index].status = isAgain ? 'resolving' : 'waiting';
-        }
-      } else if (data.type === MERGE_FILE) {
-        // 合并文件成功
-        const row: FilePieceArray = fileChunksArray.value.find(item => item.hash === data.hash)!;
-        uploadFile(row)
-      }
-      saveIndexDB();
+      // 控制器
+      websocketController(e, index, isAgain);
+      setTimeout(() => {
+        saveIndexDB();
+      }, 0);
     };
     wsApi.onopen = () => {
       console.log('webSorcket连接成功');
@@ -249,6 +252,24 @@ const connectWebSocket = async ({
   })
 };
 
+
+// 保存到IndexDB
+const saveIndexDB = () => {
+  newIndexDB.add({
+    code: 'fileChunksArray',
+    data: fileChunksArray.value.map(item => {
+      return {
+        ...item,
+        pieces: item.pieces.map((e: any) => {
+          return {
+            chunk: e.chunk,
+            isUploaded: e.isUploaded,
+          }
+        })
+      };
+    })
+  });
+};
 </script>
 
 <style lang="css">

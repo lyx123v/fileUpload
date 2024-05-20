@@ -1,5 +1,3 @@
-import { CHUNK_SIZE } from "../const";
-
 export interface FilePieceArray {
   pieces: FilePiece[]; // 文件分块信息数组
   fileName: string; // 文件名
@@ -29,10 +27,10 @@ export interface FilePiece {
 /**
  * 将文件拆分为多个固定大小的块。
  * @param file 需要拆分的文件对象。
- * @param chunkSize 每个块的大小，默认为CHUNK_SIZE。
  * @returns 返回一个包含多个文件块对象的数组，每个对象包含文件块和其大小。
  */
-export const splitFile = (file: File, chunkSize = CHUNK_SIZE) => {
+export const splitFile = (file: File) => {
+  const chunkSize = dynamicCalculationChunkSize(file.size); // 计算文件块的大小
   const fileChunkList: FilePiece[] = []; // 用于存储拆分后文件块的列表
   let cur = 0; // 当前处理位置
   while (cur < file.size) {
@@ -47,4 +45,17 @@ export const splitFile = (file: File, chunkSize = CHUNK_SIZE) => {
     cur += chunkSize; // 更新当前处理位置
   }
   return fileChunkList; // 返回拆分后的文件块列表
+};
+
+// 动态计算文件块的大小
+const dynamicCalculationChunkSize = (fileSize: number): number => {
+  const MB100 = 1024 * 1024 * 100; // 100MB 文件
+  const GB1 = 1024 * 1024 * 1024 * 1; // 1GB 文件
+  if (fileSize < MB100) {
+    return 1024 * 1024 * 5; // 5MB 文件
+  } else if (fileSize < GB1) {
+    return 1024 * 1024 * 10; // 50MB 文件
+  } else {
+    return 1024 * 1024 * 20; // 100MB 文件
+  }
 };

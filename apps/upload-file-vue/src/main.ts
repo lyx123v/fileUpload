@@ -5,9 +5,9 @@ import { createPinia } from "pinia";
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
 import router from "./router";
-import { indexDB } from "@packages/frontend_utils";
+// import { newIndexDB } from "@packages/frontend_utils";
 
-await indexDB.init(); // 初始化indexDB
+// await newIndexDB.add("friends", { name: "test", content: "test" });
 
 import App from "./App.vue";
 
