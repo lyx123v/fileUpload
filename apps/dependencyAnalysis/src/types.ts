@@ -5,8 +5,8 @@ export interface Response<T> {
 }
 
 export interface IGraphProps {
-  source: string; // 源节点
-  target: string; // 目标节点
+  source: string; // 父节点
+  target: string; // 子节点
 }
 
 export interface INodeArrayProps {
@@ -15,7 +15,7 @@ export interface INodeArrayProps {
   x?: number; // x坐标
   y?: number; // y坐标
   label?: string; // 节点名称
-  symbolSize?: number; // 节点大小
+  symbolSize: number; // 节点大小
 }
 
 export type GetGraphControllerResponse = Response<{

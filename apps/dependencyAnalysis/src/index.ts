@@ -1,9 +1,7 @@
 import { Command } from "commander";
-import { readPackageJson } from "@packages/backend_utils";
 import { startServer } from "./server";
 
 export const main = async () => {
-  const PackageJson = await readPackageJson(__dirname, []);
   const program = new Command();
 
   const mapActions = {
@@ -15,6 +13,10 @@ export const main = async () => {
         {
           flag: "-e, --entry [file-path]",
           description: "指定传入的文件路径",
+        },
+        {
+          flag: "-j, --json [file-path]",
+          description: "将依赖关系以 JSON 形式存储到指定的文件",
         },
       ],
     },
@@ -46,9 +48,10 @@ export const main = async () => {
       if (action === "*") {
         console.log("未找到命令");
       } else {
-        const { entry } = cmdObj;
+        const { entry, json = null } = cmdObj;
         startServer({
           entry,
+          json,
         });
       }
     });
@@ -58,7 +61,7 @@ export const main = async () => {
     console.log("\nExamples:");
     Reflect.ownKeys(mapActions).forEach((action) => {
       mapActions[action].examples.forEach((example) => {
-        console.log(`  ${example}`);
+        console.log(`${example}`);
       });
     });
   });

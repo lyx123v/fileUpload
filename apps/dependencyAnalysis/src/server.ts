@@ -12,12 +12,14 @@ import { PnpmLockGraph } from "./readFileDependency/pnpm";
 import { YarnLockGraph } from "./readFileDependency/yarn";
 import { NpmLockGraph } from "./readFileDependency/npm";
 import { packagesGraph } from "./readFileDependency/packages";
+import { writeFile, mkdir } from "fs/promises";
 
 interface startServer {
   entry: string; // 入口路径
+  json: string;
 }
 // 开启服务器
-export const startServer = async ({ entry }: startServer) => {
+export const startServer = async ({ entry, json: jsonPath }: startServer) => {
   // 项目路径
   const fileName = path.basename(entry || "");
   // 解析 lock file，需要兼容 npm/yarn/pnpm
@@ -34,15 +36,22 @@ export const startServer = async ({ entry }: startServer) => {
     entry
   );
   const LockGraphClass = lockFileClasses[nowFileName];
-  await processLockFile(LockGraphClass, { content, lockPath: filePath });
+  await processLockFile(
+    LockGraphClass,
+    { content, lockPath: filePath },
+    jsonPath
+  );
 };
 
 // 处理解析LockFile的共通部分
-async function processLockFile(lockFileClass, lockFileInfo) {
+async function processLockFile(lockFileClass, lockFileInfo, jsonPath) {
   const lockParser = new lockFileClass(lockFileInfo);
   const lockData = await lockParser.parse();
-
-  startLockApiServer(lockData);
+  if (jsonPath) {
+    saveJsonToFile(lockData, jsonPath);
+  } else {
+    startLockApiServer(lockData);
+  }
 }
 
 // 启动解析LockFile服务器并提供API
@@ -88,3 +97,16 @@ const startLockApiServer = async (data: any) => {
   startVueProject();
   await open(`http://localhost:${CLIENT_PORT}/`);
 };
+
+// 保存json到文件
+export async function saveJsonToFile(lockData, filePath) {
+  // process.cwd(): node命令执行的位置
+  const folderPath = path.resolve(process.cwd(), filePath);
+  const lockFilePath = path.join(folderPath, "lockFile.json");
+  // 检查路径是否存在, 不存在则创建
+  await mkdir(folderPath, { recursive: true });
+  // 写入
+
+  await writeFile(lockFilePath, new Buffer(JSON.stringify(lockData)), "utf-8");
+  console.log(`JSON已成功保存到文件: ${filePath}`);
+}
