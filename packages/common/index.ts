@@ -1,3 +1,4 @@
+import { Scheduler } from "./concurrencyControl"; // 并发调度器
 // 检查给定的值是否为非空字符串。
 export const isValidString = (filename: string) => {
   return typeof filename === "string" && filename.length > 0;
@@ -20,3 +21,6 @@ export const isArray = (val: any): boolean => Array.isArray(val);
 // 判断类型
 export const isHowType = (val: any): string =>
   Object.prototype.toString.call(val).slice(8, -1).toLowerCase();
+
+// 并发调度器
+export const scheduler = new Scheduler();

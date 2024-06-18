@@ -74,7 +74,7 @@ async function init() {
     // 绘制图表
     let options = {
       title: {
-        text: 'NPM Dependencies'
+        text: 'NPM 依赖'
       },
       animationDurationUpdate: 1500,
       animationEasingUpdate: 'quinticInOut',
