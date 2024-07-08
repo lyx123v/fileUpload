@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { calHash } from '../utils/hash';
-import { newIndexDB } from "@packages/frontend_utils";
+import { newIndexDB, JSzipUtil } from "@packages/frontend_utils";
 import { type FilePieceArray, splitFile } from '../utils/file';
 import prettysize from 'prettysize';
 import {
@@ -102,31 +102,34 @@ async function pretreatmentFile() {
   if (!len) return;
   // 获取已切片的文件数组
   for (let i = 0; i < len; i++) {
-    const fileData = fileArray.value![i];
-    const pieces = splitFile(fileData)
-    fileChunksArray.value.push({
-      fileData, // 文件分块信息数组
-      fileName: fileArray.value![i].name, // 文件名
-      hash: '', // 文件hash
-      percentage: 0, // 进度
-      status: 'resolving', // 上传状态
-      fileSize: fileSize(fileData),
-      pieces,
-      totalIndex: 0,
-      index: 0
-    });
-    const piecesLen = fileChunksArray.value.length - 1;
-    // piecesLen为当前文件的索引
-    calHash({ chunks: pieces }).then(hash => {
-      fileChunksArray.value[piecesLen].hash = hash;
-      fileChunksArray.value[piecesLen].index = piecesLen;
-      // 创建websocket
-      connectWebSocket({
-        hash,
-        name: fileData.name,
-        index: piecesLen
+    const fileDataOld = fileArray.value![i];
+    JSzipUtil.buildZip(fileDataOld).then(async (zip) => {
+      const fileData = new File([zip], `${fileDataOld.name}.zip`, { type: zip.type })
+      const pieces = splitFile(fileData)
+      fileChunksArray.value.push({
+        fileData: fileData, // 文件分块信息数组
+        fileName: fileData.name, // 文件名
+        hash: '', // 文件hash
+        percentage: 0, // 进度
+        status: 'resolving', // 上传状态
+        fileSize: fileSize(fileData),
+        pieces,
+        totalIndex: 0,
+        index: 0
       });
-      fileChunksArray.value[piecesLen].fileData = null; // 释放内存
+      const piecesLen = fileChunksArray.value.length - 1;
+      // piecesLen为当前文件的索引
+      calHash({ chunks: pieces }).then(hash => {
+        fileChunksArray.value[piecesLen].hash = hash;
+        fileChunksArray.value[piecesLen].index = piecesLen;
+        // 创建websocket
+        connectWebSocket({
+          hash,
+          name: fileData.name,
+          index: piecesLen
+        });
+        fileChunksArray.value[piecesLen].fileData = null; // 释放内存
+      });
     });
   }
 }

@@ -8,6 +8,7 @@
     "build": "tsc -b tsconfig.build.json"
   },
   "dependencies": {
+    "jszip": "^3.10.1",
     "dexie": "^4.0.4"
   },
   "devDependencies": {
